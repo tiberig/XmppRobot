@@ -3,9 +3,17 @@
 while [ true ];
 do
 	read cmd
+
+	if [ $(echo $cmd | grep -c http://youtu) -eq 1 ]; then
+		shorturl=$(echo $cmd | sed -e 's/^.*http:/http:/')
+		/home/volumio/bin/yshortplay $shorturl
+		cmd="yplay"
+	fi
 	
 	case $cmd in
 		"sys who") who ;;
+	        "yplay")   echo "ok, playing.." ;;
+	        "q")   killall -9 omxplayer.bin; echo "killed" ;;
 		*) echo "unknown command";;
 	esac
 	
