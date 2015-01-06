@@ -1,0 +1,1 @@
+perl ./talkbot <jabber id>@<jabber domain> <password> <filename with some text>
