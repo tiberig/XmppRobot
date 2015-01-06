@@ -1,0 +1,80 @@
+#!/usr/bin/perl
+use strict;
+use utf8;
+use AnyEvent;
+use AnyEvent::XMPP::Client;
+use AnyEvent::XMPP::Ext::Disco;
+use AnyEvent::XMPP::Ext::Version;
+use AnyEvent::XMPP::Namespaces qw/xmpp_ns/;
+use IPC::Open3;
+
+my ($jid, $pw, $serverip) = @ARGV;
+
+unless (@ARGV >= 3) {
+   warn "usage: xmppbot <jid> <password> <serverip>\n";
+   exit;
+}
+
+my $j       = AnyEvent->condvar;
+my $cl      = AnyEvent::XMPP::Client->new (debug => 0);
+my $disco   = AnyEvent::XMPP::Ext::Disco->new;
+my $version = AnyEvent::XMPP::Ext::Version->new;
+
+$cl->add_extension ($disco);
+$cl->add_extension ($version);
+$cl->set_presence (undef, 'MediaBerry', 1);
+
+$cl->add_account ($jid, $pw, $serverip, '5222');
+warn "connecting to $jid...\n";
+
+warn "open bot handler\n";
+my $botpid = open3(\*BOT_IN, \*BOT_OUT, \*BOT_ERR, '/home/volumio/GIT/XmppRobot/botexec')
+    or die "open3() failed $!";
+
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
+binmode BOT_IN, ":utf8";
+binmode BOT_OUT, ":utf8";
+
+$cl->reg_cb (
+   session_ready => sub {
+      my ($cl, $acc) = @_;
+      warn "connected!\n";
+   },
+   message => sub {
+      my ($cl, $acc, $msg) = @_;
+      my $repl = $msg->make_reply;
+
+      print BOT_IN $msg->any_body."\n";
+      my $ans="";
+      while (my $tmp = <BOT_OUT>) {
+      	if ($tmp eq "end\n") {
+	   last;
+	}
+	$ans = $ans.$tmp;
+      }
+      $repl->add_body($ans);
+
+      warn "Got message: '".$msg->any_body."' from ".$msg->from."\n";
+      warn "Reply: ".$ans."\n";
+      $repl->send;
+   },
+   contact_request_subscribe => sub {
+      my ($cl, $acc, $roster, $contact) = @_;
+      $contact->send_subscribed;
+      warn "Subscribed to ".$contact->jid."\n";
+   },
+   error => sub {
+      my ($cl, $acc, $error) = @_;
+      warn "Error encountered: ".$error->string."\n";
+      $j->broadcast;
+   },
+   disconnect => sub {
+      warn "Got disconnected: [@_]\n";
+      $j->broadcast;
+   },
+);
+
+warn "run xmpp\n";
+$cl->start;
+$j->wait;

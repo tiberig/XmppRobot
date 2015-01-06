@@ -1,0 +1,13 @@
+#!/bin/bash
+
+while [ true ];
+do
+	read cmd
+	
+	case $cmd in
+		"sys who") who ;;
+		*) echo "unknown command";;
+	esac
+	
+	echo "end"
+done
