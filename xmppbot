@@ -28,7 +28,7 @@ $cl->add_account ($jid, $pw, $serverip, '5222');
 warn "connecting to $jid...\n";
 
 warn "open bot handler\n";
-my $botpid = open3(\*BOT_IN, \*BOT_OUT, \*BOT_ERR, '/home/volumio/GIT/XmppRobot/botexec')
+my $botpid = open3(\*BOT_IN, \*BOT_OUT, \*BOT_ERR, '/home/volumio/bin/botwrapper')
     or die "open3() failed $!";
 
 binmode STDOUT, ":utf8";
@@ -40,12 +40,20 @@ $cl->reg_cb (
    session_ready => sub {
       my ($cl, $acc) = @_;
       warn "connected!\n";
+      $cl->send_message(
+	      "MediaBerry started" => 'stefankoch@swissjabber.de', undef, 'chat');
    },
    message => sub {
       my ($cl, $acc, $msg) = @_;
       my $repl = $msg->make_reply;
 
       print BOT_IN $msg->any_body."\n";
+      if ($msg->any_body eq "Quitbot") {
+	$repl->add_body("bye");
+	print "terminate bot on request\n";
+	exit(0);
+      }
+
       my $ans="";
       while (my $tmp = <BOT_OUT>) {
       	if ($tmp eq "end\n") {
@@ -58,6 +66,7 @@ $cl->reg_cb (
       warn "Got message: '".$msg->any_body."' from ".$msg->from."\n";
       warn "Reply: ".$ans."\n";
       $repl->send;
+
    },
    contact_request_subscribe => sub {
       my ($cl, $acc, $roster, $contact) = @_;

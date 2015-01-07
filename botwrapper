@@ -1,0 +1,10 @@
+#!/bin/bash
+
+while [ true ];
+do
+	read cmd
+
+	/home/volumio/bin/botexec "$cmd"
+
+	echo "end"
+done

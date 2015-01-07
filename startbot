@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [ "$1" != "_start_" ]; then
+	su -c "$0 _start_" volumio
+	exit 0
+fi
+
+cd /home/volumio/bin
+./xmppbot $(cat account) &

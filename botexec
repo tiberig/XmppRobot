@@ -1,21 +1,42 @@
 #!/bin/bash
 
-while [ true ];
-do
-	read cmd
+cmd="$1"
 
-	if [ $(echo $cmd | grep -c http://youtu) -eq 1 ]; then
-		shorturl=$(echo $cmd | sed -e 's/^.*http:/http:/')
-		/home/volumio/bin/yshortplay $shorturl
-		cmd="yplay"
-	fi
-	
-	case $cmd in
-		"sys who") who ;;
-	        "yplay")   echo "ok, playing.." ;;
-	        "q")   killall -9 omxplayer.bin; echo "killed" ;;
-		*) echo "unknown command";;
-	esac
-	
-	echo "end"
-done
+function print_help {
+	echo "MediaBerry Help:"
+	echo "------------------------------"
+	echo "Who   - print who is online"
+	echo "Temp  - print RPI core temp"
+	echo "Top   - show top cpu consumer"
+	echo "youtube short url - play video"
+	echo "Q     - quit youtube video"
+	echo "Poweroff  - shutdown system"
+	echo "Restart - restart system"
+}
+
+function print_temp {
+	a=$(printf "%06d" `cat /sys/devices/virtual/thermal/thermal_zone0/temp`)
+	echo "CPU0 = ${a:1:2},${a:3:3} C"
+}
+
+function print_top {
+	top -b -n 1 | head -n 8 | tail -n 1 | awk '{print "user: "$2"\ncmd:  "$12"\n%cpu: "$9}'
+}
+
+if [ $(echo $cmd | grep -c http://youtu) -eq 1 ]; then
+	shorturl=$(echo $cmd | sed -e 's/^.*http:/http:/')
+	/home/volumio/bin/yshortplay $shorturl
+	cmd="yplay"
+fi
+
+case $cmd in
+	"Help") print_help;;
+	"Who")  who ;;
+	"Temp") print_temp ;;
+	"Top")  print_top ;;
+	"Q")    killall -9 omxplayer.bin; echo "killed" ;;
+	"Poweroff")  sudo halt ;;
+	"Restart")  sudo reboot ;;
+	*)      echo "unknown command";;
+esac
+
