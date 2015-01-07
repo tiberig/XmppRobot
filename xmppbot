@@ -41,7 +41,7 @@ $cl->reg_cb (
       my ($cl, $acc) = @_;
       warn "connected!\n";
       $cl->send_message(
-	      "MediaBerry started" => 'stefankoch@swissjabber.de', undef, 'chat');
+	      "MediaBerry started" => 'add account here', undef, 'chat');
    },
    message => sub {
       my ($cl, $acc, $msg) = @_;
